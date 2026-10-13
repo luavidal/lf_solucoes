@@ -272,7 +272,7 @@
         <p><strong>Consumo Estimado da Rota:</strong> <span id="litrosPercurso">--</span> Litros</p>
         <p><strong>Reserva Adicionada:</strong> +100 Litros</p>
         <p><strong>No Tanque (Deduzido):</strong> -<span id="tanqueDeduzido">0</span> Litros</p>
-        <p style="color: #0d6efd;"><strong>Tanque Restante Previsto na Chegada:</strong> <span id="tanqueRestante">--</span> Litros</p>
+        <p><strong>Tanque Restante Previsto na Chegada:</strong> <span id="tanqueRestante">--</span> Litros</p>
         <hr style="margin: 12px 0;">
         <p style="font-size: 1.2rem; color: #155724;">
           <strong>Total a Abastecer Recomendado:</strong> <span id="litrosFinais">--</span> Litros
@@ -478,7 +478,7 @@
       const litrosPercurso = parseFloat((distanciaKm / mediaKml).toFixed(2));
       const MARGEM_RESERVA = 100;
 
-      // 2. Cálculo do Tanque Restante (se negativo, limita em 0L)
+      // 2. Cálculo do Tanque Restante sem reserva (se consumir mais do que tem no tanque, exibe 0L)
       let saldoTanquePrevisto = tanqueAtual - litrosPercurso;
       if (saldoTanquePrevisto < 0) saldoTanquePrevisto = 0;
 
