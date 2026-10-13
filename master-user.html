@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Rota e Combustível - Multi-Pontos</title>
+  
+  <!-- Estilos do Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f0f2f5;
+      color: #333;
+      padding: 15px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #1a252f;
+      text-align: center;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      color: #495057;
+    }
+
+    .input-with-btn {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-with-btn input {
+      flex: 1;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.99);
+    }
+
+    button.secundario {
+      background-color: #007bff;
+    }
+
+    button.adicionar {
+      background-color: #17a2b8;
+    }
+
+    button.remover {
+      background-color: #dc3545;
+      width: auto;
+      padding: 0 15px;
+    }
+
+    button.limpar {
+      background-color: #dc3545;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    /* Área de Paradas Intermediárias Dinâmicas */
+    #containerParadas {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .item-parada {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .item-parada .form-group {
+      flex: 1;
+    }
+
+    /* Container de Resultados e Mapa */
+    .resultado-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .resultado {
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 6px solid #28a745;
+    }
+
+    .resultado h3 {
+      margin-bottom: 15px;
+      color: #155724;
+      font-size: 1.2rem;
+    }
+
+    .resultado p {
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .aviso-reserva {
+      color: #856404;
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      margin-top: 15px;
+    }
+
+    #map {
+      height: 350px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+    }
+
+    /* --- RESPONSIVIDADE (Desktop e Tablets Grandes) --- */
+    @media (min-width: 768px) {
+      body {
+        padding: 40px 20px;
+      }
+
+      h2 {
+        font-size: 1.8rem;
+        margin-bottom: 25px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-group.full-width {
+        grid-column: span 2;
+      }
+
+      .btn-group {
+        flex-direction: row;
+      }
+
+      .btn-group button {
+        width: auto;
+      }
+
+      .resultado-wrapper {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        align-items: start;
+      }
+
+      #map {
+        height: 480px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Calculadora de Combustível e Rota</h2>
+
+  <!-- ÁREA DO FORMULÁRIO -->
+  <div id="secaoFormulario">
+    <div class="form-grid">
+      <!-- Ponto A (Origem) -->
+      <div class="form-group full-width">
+        <label for="pontoA">Origem (Ponto A):</label>
+        <input type="text" id="pontoA" placeholder="Digite o endereço de origem ou use o GPS">
+        <div class="btn-group" style="margin-top: 8px;">
+          <button type="button" class="secundario" onclick="usarGPS()">Usar minha localização atual (GPS)</button>
+        </div>
+      </div>
+
+      <!-- Container das Paradas Intermediárias (Opcionais / Dinâmicas) -->
+      <div class="form-group full-width">
+        <label>Paradas Intermediárias (Opcional):</label>
+        <div id="containerParadas">
+          <!-- As paradas dinâmicas aparecem aqui -->
+        </div>
+        <button type="button" class="adicionar" onclick="adicionarCampoParada()">+ Adicionar Parada Intermediária</button>
+      </div>
+
+      <!-- Destino Final (Liberado para edição) -->
+      <div class="form-group full-width">
+        <label for="destinoFinal">Destino Final:</label>
+        <input type="text" id="destinoFinal" value="Capela Velha, Araucária - PR" placeholder="Digite o endereço de destino final">
+      </div>
+
+      <!-- Média de Combustível -->
+      <div class="form-group">
+        <label for="mediaKml">Média de consumo do veículo (Km/L):</label>
+        <input type="number" id="mediaKml" placeholder="Ex: 10" value="10" step="0.1">
+      </div>
+
+      <!-- Quantidade atual no tanque -->
+      <div class="form-group">
+        <label for="tanqueAtual">Combustível atual no tanque (Litros):</label>
+        <input type="number" id="tanqueAtual" placeholder="Ex: 20 (deixe em branco para avisar)" step="0.1">
+      </div>
+    </div>
+
+    <div class="btn-group" style="margin-top: 25px;">
+      <button type="button" onclick="iniciarCalculo()">Calcular Rota e Combustível</button>
+    </div>
+  </div>
+
+  <!-- ÁREA DO RESULTADO + MAPA -->
+  <div id="secaoResultado" style="display: none;">
+    <div class="resultado-wrapper">
+      <!-- Painel de Dados -->
+      <div class="resultado">
+        <h3>Resultado do Percurso</h3>
+        <p><strong>Total de Pontos da Rota:</strong> <span id="resumoPontos">--</span></p>
+        <p><strong>Distância Total:</strong> <span id="distancia">--</span> km</p>
+        <p><strong>Consumo Estimado:</strong> <span id="litrosPercurso">--</span> Litros</p>
+        <p><strong>Reserva Adicionada:</strong> +100 Litros</p>
+        <p><strong>No Tanque (Deduzido):</strong> -<span id="tanqueDeduzido">0</span> Litros</p>
+        <hr style="margin: 12px 0;">
+        <p style="font-size: 1.2rem; color: #155724;">
+          <strong>Total a Abastecer:</strong> <span id="litrosFinais">--</span> Litros
+        </p>
+        
+        <div class="aviso-reserva">
+          ℹ️ <strong>Nota:</strong> O valor inclui a margem fixa de <strong>100L de reserva de segurança</strong>.
+        </div>
+
+        <button type="button" class="limpar" onclick="limparConsulta()" style="margin-top: 20px;">Nova Consulta</button>
+      </div>
+
+      <!-- Mapa -->
+      <div id="map"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- JS do Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  let map = null;
+  let rotaLayer = null;
+  let marcadores = [];
+  let contadorParadas = 0;
+
+  function inicializarMapa() {
+    if (!map) {
+      // Posição inicial centralizada em Araucária
+      map = L.map('map').setView([-25.5685, -49.3888], 12);
+      
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+      }).addTo(map);
+    }
+  }
+
+  // Função para adicionar um novo campo de parada intermediária
+  function adicionarCampoParada(valor = '') {
+    contadorParadas++;
+    const container = document.getElementById('containerParadas');
+    
+    const divParada = document.createElement('div');
+    divParada.className = 'item-parada';
+    divParada.id = `parada_item_${contadorParadas}`;
+
+    divParada.innerHTML = `
+      <div class="form-group" style="margin:0;">
+        <input type="text" class="input-parada" placeholder="Parada ${container.children.length + 1} (Ex: Endereço ou Cidade)" value="${valor}">
+      </div>
+      <button type="button" class="remover" title="Remover Parada" onclick="removerCampoParada('parada_item_${contadorParadas}')">✕</button>
+    `;
+
+    container.appendChild(divParada);
+    atualizarPlaceholdersParadas();
+  }
+
+  // Função para remover uma parada específica
+  function removerCampoParada(id) {
+    const item = document.getElementById(id);
+    if (item) {
+      item.remove();
+      atualizarPlaceholdersParadas();
+    }
+  }
+
+  // Reordena os placeholders das paradas
+  function atualizarPlaceholdersParadas() {
+    const inputs = document.querySelectorAll('.input-parada');
+    inputs.forEach((input, index) => {
+      input.placeholder = `Parada ${index + 1} (Ex: Endereço ou Cidade)`;
+    });
+  }
+
+  // Obter localização atual via GPS
+  function usarGPS() {
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      alert("Atenção: A geolocalização no celular exige conexão segura (HTTPS).");
+    }
+
+    if ("geolocation" in navigator) {
+      const opcoes = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          document.getElementById('pontoA').value = `${lat}, ${lng}`;
+          alert("Localização obtida com sucesso!");
+        },
+        error => {
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              alert("Erro: Permissão para acessar o GPS foi negada.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              alert("Erro: GPS indisponível ou desligado.");
+              break;
+            case error.TIMEOUT:
+              alert("Erro: Tempo limite excedido para obter localização.");
+              break;
+            default:
+              alert("Erro ao obter localização: " + error.message);
+              break;
+          }
+        },
+        opcoes
+      );
+    } else {
+      alert("Seu navegador não suporta geolocalização.");
+    }
+  }
+
+  function iniciarCalculo() {
+    const tanqueInput = document.getElementById('tanqueAtual').value.trim();
+
+    if (tanqueInput === "" || parseFloat(tanqueInput) < 0) {
+      const confirmar = confirm(
+        "Atenção: Você não informou a quantidade de combustível atual no tanque.\n\n" +
+        "• Clique em 'OK' para prosseguir considerando 0 Litros no tanque.\n" +
+        "• Clique em 'Cancelar' para voltar e digitar a quantidade."
+      );
+
+      if (!confirmar) {
+        document.getElementById('tanqueAtual').focus();
+        return;
+      }
+    }
+
+    calcularRota();
+  }
+
+  async function geocodificar(endereco) {
+    if (endereco.includes(',')) {
+      const [lat, lng] = endereco.split(',').map(n => parseFloat(n.trim()));
+      if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+    }
+
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data || data.length === 0) {
+      throw new Error(`Endereço não encontrado: "${endereco}"`);
+    }
+
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+
+  async function calcularRota() {
+    const enderecoA = document.getElementById('pontoA').value.trim();
+    const enderecoDestino = document.getElementById('destinoFinal').value.trim();
+    const mediaKml = parseFloat(document.getElementById('mediaKml').value);
+    const tanqueAtual = parseFloat(document.getElementById('tanqueAtual').value) || 0;
+
+    // Coleta todas as paradas intermediárias preenchidas
+    const inputsParadas = document.querySelectorAll('.input-parada');
+    const enderecosParadas = [];
+    inputsParadas.forEach(inp => {
+      const val = inp.value.trim();
+      if (val !== '') enderecosParadas.push(val);
+    });
+
+    if (!enderecoA || !enderecoDestino || !mediaKml || mediaKml <= 0) {
+      alert("Por favor, preencha a Origem, o Destino Final e a Média do veículo.");
+      return;
+    }
+
+    try {
+      // 1. Geocodificar todos os pontos da sequência
+      const listaPontosGeocodificados = [];
+      const titulosMarcadores = [];
+
+      // Origem
+      const coordA = await geocodificar(enderecoA);
+      listaPontosGeocodificados.push(coordA);
+      titulosMarcadores.push("Ponto A (Origem)");
+
+      // Paradas Intermediárias
+      for (let i = 0; i < enderecosParadas.length; i++) {
+        const coordP = await geocodificar(enderecosParadas[i]);
+        listaPontosGeocodificados.push(coordP);
+        titulosMarcadores.push(`Parada ${i + 1}`);
+      }
+
+      // Destino Final
+      const coordDestino = await geocodificar(enderecoDestino);
+      listaPontosGeocodificados.push(coordDestino);
+      titulosMarcadores.push("Destino Final");
+
+      // 2. Montar string de coordenadas para o OSRM (lng,lat;lng,lat;...)
+      const coordsString = listaPontosGeocodificados
+        .map(p => `${p.lng},${p.lat}`)
+        .join(';');
+
+      const urlOSRM = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
+
+      // 3. Requisitar rota
+      const res = await fetch(urlOSRM);
+      const data = await res.json();
+
+      if (data.code !== "Ok") {
+        alert("Erro ao calcular a rota. Verifique os endereços informados.");
+        return;
+      }
+
+      // 4. Cálculos
+      const distanciaMetros = data.routes[0].distance;
+      const distanciaKm = (distanciaMetros / 1000).toFixed(2);
+      const litrosPercurso = parseFloat((distanciaKm / mediaKml).toFixed(2));
+      const MARGEM_RESERVA = 100;
+
+      let totalAbastecer = (litrosPercurso + MARGEM_RESERVA) - tanqueAtual;
+      if (totalAbastecer < 0) totalAbastecer = 0;
+
+      // 5. Exibição de Telas
+      document.getElementById('secaoFormulario').style.display = 'none';
+      document.getElementById('secaoResultado').style.display = 'block';
+
+      document.getElementById('resumoPontos').innerText = `${listaPontosGeocodificados.length} pontos (${enderecosParadas.length} parada(s))`;
+      document.getElementById('distancia').innerText = distanciaKm;
+      document.getElementById('litrosPercurso').innerText = litrosPercurso.toFixed(2);
+      document.getElementById('tanqueDeduzido').innerText = tanqueAtual.toFixed(2);
+      document.getElementById('litrosFinais').innerText = totalAbastecer.toFixed(2);
+
+      // 6. Renderizar Mapa
+      inicializarMapa();
+
+      setTimeout(() => {
+        map.invalidateSize();
+        desenharNoMapa(data.routes[0].geometry, listaPontosGeocodificados, titulosMarcadores);
+      }, 100);
+
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  function desenharNoMapa(geojson, pontos, titulos) {
+    if (rotaLayer) map.removeLayer(rotaLayer);
+    marcadores.forEach(m => map.removeLayer(m));
+    marcadores = [];
+
+    rotaLayer = L.geoJSON(geojson, {
+      style: { color: '#007bff', weight: 5, opacity: 0.7 }
+    }).addTo(map);
+
+    pontos.forEach((p, index) => {
+      const m = L.marker([p.lat, p.lng]).addTo(map).bindPopup(titulos[index]);
+      marcadores.push(m);
+    });
+
+    map.fitBounds(rotaLayer.getBounds(), { padding: [30, 30] });
+  }
+
+  function limparConsulta() {
+    document.getElementById('pontoA').value = '';
+    document.getElementById('destinoFinal').value = 'Capela Velha, Araucária - PR';
+    document.getElementById('mediaKml').value = '10';
+    document.getElementById('tanqueAtual').value = '';
+    
+    // Limpa paradas intermediárias dinâmicas
+    document.getElementById('containerParadas').innerHTML = '';
+
+    document.getElementById('secaoResultado').style.display = 'none';
+    document.getElementById('secaoFormulario').style.display = 'block';
+
+    if (rotaLayer) map.removeLayer(rotaLayer);
+    marcadores.forEach(m => map.removeLayer(m));
+    marcadores = [];
+  }
+</script>
+
+</body>
+</html>
