@@ -57,15 +57,6 @@
       color: #495057;
     }
 
-    .input-with-btn {
-      display: flex;
-      gap: 8px;
-    }
-
-    .input-with-btn input {
-      flex: 1;
-    }
-
     input {
       width: 100%;
       padding: 12px;
@@ -115,7 +106,6 @@
     button.remover {
       background-color: #dc3545;
       width: auto;
-      height: 100%;
       padding: 0 15px;
     }
 
@@ -127,7 +117,6 @@
       opacity: 0.92;
     }
 
-    /* Área de Paradas Intermediárias Dinâmicas */
     #containerParadas {
       display: flex;
       flex-direction: column;
@@ -145,7 +134,6 @@
       flex: 1;
     }
 
-    /* Container de Resultados e Mapa */
     .resultado-wrapper {
       display: flex;
       flex-direction: column;
@@ -187,7 +175,6 @@
       border: 1px solid #dee2e6;
     }
 
-    /* --- RESPONSIVIDADE (Desktop e Tablets Grandes) --- */
     @media (min-width: 768px) {
       body {
         padding: 40px 20px;
@@ -243,16 +230,14 @@
         </div>
       </div>
 
-      <!-- Container das Paradas Intermediárias (Opcionais / Dinâmicas) -->
+      <!-- Container das Paradas Intermediárias -->
       <div class="form-group full-width">
         <label>Paradas Intermediárias (Opcional):</label>
-        <div id="containerParadas">
-          <!-- As paradas dinâmicas aparecem aqui -->
-        </div>
+        <div id="containerParadas"></div>
         <button type="button" class="adicionar" onclick="adicionarCampoParada()">+ Adicionar Parada Intermediária</button>
       </div>
 
-      <!-- Destino Final (Liberado para edição) -->
+      <!-- Destino Final -->
       <div class="form-group full-width">
         <label for="destinoFinal">Destino Final:</label>
         <input type="text" id="destinoFinal" value="Capela Velha, Araucária - PR" placeholder="Digite o endereço de destino final">
@@ -261,13 +246,13 @@
       <!-- Média de Combustível -->
       <div class="form-group">
         <label for="mediaKml">Média de consumo do veículo (Km/L):</label>
-        <input type="number" id="mediaKml" placeholder="Ex: 2,5" value="2" step="0.1">
+        <input type="number" id="mediaKml" placeholder="Ex: 10" value="10" step="0.1">
       </div>
 
       <!-- Quantidade atual no tanque -->
       <div class="form-group">
         <label for="tanqueAtual">Combustível atual no tanque (Litros):</label>
-        <input type="number" id="tanqueAtual" placeholder="Ex: 200" step="0.1">
+        <input type="number" id="tanqueAtual" placeholder="Ex: 20 (deixe em branco para avisar)" step="0.1">
       </div>
     </div>
 
@@ -284,16 +269,17 @@
         <h3>Resultado do Percurso</h3>
         <p><strong>Total de Pontos da Rota:</strong> <span id="resumoPontos">--</span></p>
         <p><strong>Distância Total:</strong> <span id="distancia">--</span> km</p>
-        <p><strong>Consumo Estimado:</strong> <span id="litrosPercurso">--</span> Litros</p>
+        <p><strong>Consumo Estimado da Rota:</strong> <span id="litrosPercurso">--</span> Litros</p>
         <p><strong>Reserva Adicionada:</strong> +100 Litros</p>
         <p><strong>No Tanque (Deduzido):</strong> -<span id="tanqueDeduzido">0</span> Litros</p>
+        <p style="color: #0d6efd;"><strong>Tanque Restante Previsto na Chegada:</strong> <span id="tanqueRestante">--</span> Litros</p>
         <hr style="margin: 12px 0;">
         <p style="font-size: 1.2rem; color: #155724;">
-          <strong>Total a Abastecer:</strong> <span id="litrosFinais">--</span> Litros
+          <strong>Total a Abastecer Recomendado:</strong> <span id="litrosFinais">--</span> Litros
         </p>
         
         <div class="aviso-reserva">
-          ℹ️ <strong>Nota:</strong> O valor inclui a margem fixa de <strong>100L de reserva de segurança</strong>.
+          ℹ️ <strong>Nota:</strong> O valor final já inclui a margem fixa de <strong>100L de reserva de segurança</strong>.
         </div>
 
         <button type="button" class="limpar" onclick="limparConsulta()" style="margin-top: 20px;">Nova Consulta</button>
@@ -317,7 +303,6 @@
 
   function inicializarMapa() {
     if (!map) {
-      // Posição inicial centralizada em Araucária
       map = L.map('map').setView([-25.5685, -49.3888], 12);
       
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -326,7 +311,6 @@
     }
   }
 
-  // Função para adicionar um novo campo de parada intermediária
   function adicionarCampoParada(valor = '') {
     contadorParadas++;
     const container = document.getElementById('containerParadas');
@@ -346,7 +330,6 @@
     atualizarPlaceholdersParadas();
   }
 
-  // Função para remover uma parada específica
   function removerCampoParada(id) {
     const item = document.getElementById(id);
     if (item) {
@@ -355,7 +338,6 @@
     }
   }
 
-  // Reordena os placeholders das paradas
   function atualizarPlaceholdersParadas() {
     const inputs = document.querySelectorAll('.input-parada');
     inputs.forEach((input, index) => {
@@ -363,7 +345,6 @@
     });
   }
 
-  // Obter localização atual via GPS
   function usarGPS() {
     if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
       alert("Atenção: A geolocalização no celular exige conexão segura (HTTPS).");
@@ -377,6 +358,7 @@
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           document.getElementById('pontoA').value = `${lat}, ${lng}`;
+          alert("Localização obtida com sucesso!");
         },
         error => {
           switch(error.code) {
@@ -443,7 +425,6 @@
     const mediaKml = parseFloat(document.getElementById('mediaKml').value);
     const tanqueAtual = parseFloat(document.getElementById('tanqueAtual').value) || 0;
 
-    // Coleta todas as paradas intermediárias preenchidas
     const inputsParadas = document.querySelectorAll('.input-parada');
     const enderecosParadas = [];
     inputsParadas.forEach(inp => {
@@ -457,7 +438,6 @@
     }
 
     try {
-      // 1. Geocodificar todos os pontos da sequência
       const listaPontosGeocodificados = [];
       const titulosMarcadores = [];
 
@@ -478,14 +458,12 @@
       listaPontosGeocodificados.push(coordDestino);
       titulosMarcadores.push("Destino Final");
 
-      // 2. Montar string de coordenadas para o OSRM (lng,lat;lng,lat;...)
       const coordsString = listaPontosGeocodificados
         .map(p => `${p.lng},${p.lat}`)
         .join(';');
 
       const urlOSRM = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
 
-      // 3. Requisitar rota
       const res = await fetch(urlOSRM);
       const data = await res.json();
 
@@ -494,26 +472,33 @@
         return;
       }
 
-      // 4. Cálculos
+      // 1. Cálculos de Distância e Consumo
       const distanciaMetros = data.routes[0].distance;
       const distanciaKm = (distanciaMetros / 1000).toFixed(2);
       const litrosPercurso = parseFloat((distanciaKm / mediaKml).toFixed(2));
       const MARGEM_RESERVA = 100;
 
+      // 2. Cálculo do Tanque Restante (se negativo, limita em 0L)
+      let saldoTanquePrevisto = tanqueAtual - litrosPercurso;
+      if (saldoTanquePrevisto < 0) saldoTanquePrevisto = 0;
+
+      // 3. Total a abastecer considerando a reserva de 100L
       let totalAbastecer = (litrosPercurso + MARGEM_RESERVA) - tanqueAtual;
       if (totalAbastecer < 0) totalAbastecer = 0;
 
-      // 5. Exibição de Telas
+      // 4. Atualiza visualização de telas
       document.getElementById('secaoFormulario').style.display = 'none';
       document.getElementById('secaoResultado').style.display = 'block';
 
+      // 5. Preenche os campos do painel
       document.getElementById('resumoPontos').innerText = `${listaPontosGeocodificados.length} pontos (${enderecosParadas.length} parada(s))`;
       document.getElementById('distancia').innerText = distanciaKm;
       document.getElementById('litrosPercurso').innerText = litrosPercurso.toFixed(2);
       document.getElementById('tanqueDeduzido').innerText = tanqueAtual.toFixed(2);
+      document.getElementById('tanqueRestante').innerText = saldoTanquePrevisto.toFixed(2);
       document.getElementById('litrosFinais').innerText = totalAbastecer.toFixed(2);
 
-      // 6. Renderizar Mapa
+      // 6. Renderiza no Mapa
       inicializarMapa();
 
       setTimeout(() => {
@@ -546,10 +531,9 @@
   function limparConsulta() {
     document.getElementById('pontoA').value = '';
     document.getElementById('destinoFinal').value = 'Capela Velha, Araucária - PR';
-    document.getElementById('mediaKml').value = '2';
+    document.getElementById('mediaKml').value = '10';
     document.getElementById('tanqueAtual').value = '';
     
-    // Limpa paradas intermediárias dinâmicas
     document.getElementById('containerParadas').innerHTML = '';
 
     document.getElementById('secaoResultado').style.display = 'none';
