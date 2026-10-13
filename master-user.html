@@ -106,6 +106,7 @@
     button.remover {
       background-color: #dc3545;
       width: auto;
+      height: 100%;
       padding: 0 15px;
     }
 
@@ -358,7 +359,6 @@
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           document.getElementById('pontoA').value = `${lat}, ${lng}`;
-          alert("Localização obtida com sucesso!");
         },
         error => {
           switch(error.code) {
@@ -531,7 +531,7 @@
   function limparConsulta() {
     document.getElementById('pontoA').value = '';
     document.getElementById('destinoFinal').value = 'Capela Velha, Araucária - PR';
-    document.getElementById('mediaKml').value = '10';
+    document.getElementById('mediaKml').value = '2';
     document.getElementById('tanqueAtual').value = '';
     
     document.getElementById('containerParadas').innerHTML = '';
